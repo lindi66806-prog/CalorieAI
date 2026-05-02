@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            python3-pip python3-dev ffmpeg libssl-dev libffi-dev \
+            libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
+            cmake swig git
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer==1.5.0
+          pip install kivy==2.3.0
+
+      - name: Install Android SDK & NDK (via p4a)
+        run: |
+          pip install python-for-android
+
+      - name: Build debug APK
+        env:
+          BUILDZER_SPEC: buildozer.spec
+        run: |
+          buildozer android debug
+          ls -la bin/
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CalorieAI-debug-APK
+          path: bin/*.apk
+
+      - name: Upload to GitHub Release (if tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: bin/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
