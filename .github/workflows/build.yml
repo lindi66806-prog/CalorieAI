@@ -18,57 +18,54 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies & configure autoconf 2.13
+      - name: Patch p4a libffi recipe + install dependencies
         run: |
+          set -e
+          # Install system dependencies
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             python3-pip python3-dev ffmpeg libssl-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
-          # Remove system autoconf 2.71 and replace with 2.13
+
+          # Replace system autoconf with v2.13
           sudo rm -f /usr/bin/autoconf /usr/bin/autoreconf /usr/bin/autoheader /usr/bin/automake /usr/bin/aclocal
-          sudo rm -f /usr/local/bin/autoconf /usr/local/bin/autoreconf /usr/local/bin/autoheader
           sudo ln -sf /usr/bin/autoconf2.13 /usr/bin/autoconf
           sudo ln -sf /usr/bin/autoreconf2.13 /usr/bin/autoreconf
           sudo ln -sf /usr/bin/autoheader2.13 /usr/bin/autoheader
-          # Create wrapper script that strips --include-deps from any autoreconf call
-          # (autogen.sh calls autoreconf with args; we intercept via PATH)
-          echo '#!/bin/bash
-          args=()
-          skip_next=false
-          for arg in "$@"; do
-            if [ "" = true ]; then
-              skip_next=false
-              continue
-            fi
-            if [ "" = "--include-deps" ]; then
-              skip_next=true
-              continue
-            fi
-            args+=("")
-          done
-          exec /usr/bin/autoreconf ""' | sudo tee /usr/local/bin/autoreconf_wrapper > /dev/null
-          sudo chmod +x /usr/local/bin/autoreconf_wrapper
-          # Point the build environment PATH to use wrapper first
-          echo '/usr/local/bin/autoreconf_wrapper:' >> 
-          echo 'autoreconf wrapper installed'
 
-      - name: Install Python dependencies
-        run: |
+          # Install Python packages
           pip install --upgrade pip
           pip install cython
           pip install buildozer==1.5.0 kivy==2.3.0
           pip install python-for-android
 
+          # KEY FIX: Patch p4a's libffi recipe to skip autogen.sh and call autoreconf -fi directly
+          # The p4a libffi recipe calls autogen.sh which hardcodes autoreconf --include-deps
+          # We intercept it by replacing the autogen.sh call with a direct autoreconf -fi
+          P4A_SITE=
+          LIBFFI_RECIPE="/pythonforandroid/recipes/libffi/__init__.py"
+          echo "Patching: "
+          if [ -f "" ]; then
+            # Replace "sh.Command('./autogen.sh')" with "sh.Command('autoreconf', '-fi')"
+            sudo sed -i "s|sh\.Command('./autogen.sh')|sh.Command('autoreconf', '-fi')|g" ""
+            echo "Patched! Verification:"
+            grep -n "autoreconf" "" | head -5
+          else
+            echo "ERROR: libffi recipe not found at "
+            find / -name "libffi" -path "*/pythonforandroid/recipes/*" -type d 2>/dev/null | head -5
+          fi
+
+          # Verify autoconf
+          which autoreconf
+          autoreconf --version 2>&1 | head -1
+
       - name: Build debug APK
         env:
           BUILDZER_SPEC: buildozer.spec
-          PATH: '/usr/local/bin/autoreconf_wrapper:'
         run: |
-          # Verify
           which autoreconf
           autoreconf --version 2>&1 | head -1
-          # Run build
           buildozer android debug
           ls -la bin/
 
