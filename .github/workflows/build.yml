@@ -29,6 +29,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
+          pip install cython
           pip install buildozer==1.5.0
           pip install kivy==2.3.0
 
@@ -48,11 +49,3 @@ jobs:
         with:
           name: CalorieAI-debug-APK
           path: bin/*.apk
-
-      - name: Upload to GitHub Release (if tag)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: bin/*.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
