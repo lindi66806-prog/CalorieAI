@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install -y -qq \
             python3-pip python3-dev ffmpeg libssl-dev libffi-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
-            cmake swig git
+            cmake swig git autoconf2.13 automake1.16 libtool
 
       - name: Install Python dependencies
         run: |
@@ -40,6 +40,7 @@ jobs:
       - name: Build debug APK
         env:
           BUILDZER_SPEC: buildozer.spec
+          AUTOCONF: /usr/bin/autoconf2.13
         run: |
           buildozer android debug
           ls -la bin/
