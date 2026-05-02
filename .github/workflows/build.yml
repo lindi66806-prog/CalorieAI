@@ -27,18 +27,6 @@ jobs:
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
 
-      - name: Create autoreconf wrapper via base64
-        run: |
-          set -e
-          echo 'IyEvYmluL2Jhc2gKQVJHUz0oKQpTS0lQX05FWFQ9ZmFsc2UKZm9yIEFSRyBpbiAiJEAiOyBkbwogIGlmIFsgIiRTS0lQX05FWFQiID0gInRydWUiIF07IHRoZW4KICAgIFNLSVBfTkVYVD1mYWxzZQogICAgY29udGludWUKICBmaQogIGNhc2UgIiRBUkciIGluCiAgICAtLWluY2x1ZGUtZGVwc3wtLWluY2x1ZGUtZGVwKSBTS0lQX05FWFQ9dHJ1ZSA7OwogICAgKikgQVJHUys9KCIkQVJHIikgOzsKICBlc2FjCmRvbmUKZXhlYyAvdXNyL2Jpbi9hdXRvcmVjb25mMi4xMyAiJHtBUkdTW0BdfSIK' | base64 -d | sudo tee /usr/local/bin/autoreconf > /dev/null
-          sudo chmod +x /usr/local/bin/autoreconf
-          echo "=== which autoreconf ==="
-          which autoreconf
-          echo "=== autoreconf --version ==="
-          autoreconf --version 2>&1 | head -1
-          echo "=== test: autoreconf -f 2>&1 | head -3 ==="
-          autoreconf -f 2>&1 | head -3
-
       - name: Install Python dependencies
         run: |
           set -e
@@ -46,16 +34,26 @@ jobs:
           pip install cython
           pip install buildozer==1.5.0 kivy==2.3.0
           pip install python-for-android
+          echo "=== Find p4a libffi recipe ==="
+          find /opt/hostedtoolcache/Python/3.11.15/x64/lib -name "libffi" -type d 2>/dev/null | xargs -I {} find {} -name "__init__.py" | grep libffi
+          echo "=== Patch p4a libffi recipe ==="
+          # Find the installed p4a libffi recipe path
+          P4A_RECIPE=$(find /opt/hostedtoolcache/Python/3.11.15/x64/lib -path "*/pythonforandroid/recipes/libffi/__init__.py" 2>/dev/null | head -1)
+          if [ -z "$P4A_RECIPE" ]; then
+            echo "p4a recipe not found, trying another path..."
+            P4A_RECIPE=$(python3 -c "import pythonforandroid; import os; print(os.path.join(os.path.dirname(pythonforandroid.__file__), 'recipes', 'libffi', '__init__.py'))")
+          fi
+          echo "Patching $P4A_RECIPE"
+          # Replace the autogen.sh call with autoreconf2.13 -fi
+          sed -i "s|sh.Command('./autogen.sh')|sh.Command('/usr/bin/autoreconf2.13', '-fi')|g" "$P4A_RECIPE"
+          # Verify patch
+          grep "autoreconf2.13" "$P4A_RECIPE" && echo "Patch successful" || echo "Patch failed"
 
       - name: Build debug APK
         env:
           BUILDZER_SPEC: buildozer.spec
         run: |
           set -e
-          echo "=== Build: which autoreconf ==="
-          which autoreconf
-          echo "=== Build: autoreconf --version ==="
-          autoreconf --version 2>&1 | head -1
           buildozer android debug
           ls -la bin/
 
