@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,53 +18,56 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Patch autogen.sh to remove incompatible --include-deps flag
+      - name: Install system dependencies & configure autoconf 2.13
         run: |
-          # Install system dependencies first
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             python3-pip python3-dev ffmpeg libssl-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
-          # Remove old autoconf and replace with v2.13
+          # Remove system autoconf 2.71 and replace with 2.13
           sudo rm -f /usr/bin/autoconf /usr/bin/autoreconf /usr/bin/autoheader /usr/bin/automake /usr/bin/aclocal
-          sudo cp /usr/bin/autoconf2.13 /usr/bin/autoconf
-          sudo cp /usr/bin/autoreconf2.13 /usr/bin/autoreconf
-          # Verify
-          which autoconf autoreconf
-          autoconf --version | head -1
-          autoreconf --version | head -1
+          sudo rm -f /usr/local/bin/autoconf /usr/local/bin/autoreconf /usr/local/bin/autoheader
+          sudo ln -sf /usr/bin/autoconf2.13 /usr/bin/autoconf
+          sudo ln -sf /usr/bin/autoreconf2.13 /usr/bin/autoreconf
+          sudo ln -sf /usr/bin/autoheader2.13 /usr/bin/autoheader
+          # Create wrapper script that strips --include-deps from any autoreconf call
+          # (autogen.sh calls autoreconf with args; we intercept via PATH)
+          echo '#!/bin/bash
+          args=()
+          skip_next=false
+          for arg in "$@"; do
+            if [ "" = true ]; then
+              skip_next=false
+              continue
+            fi
+            if [ "" = "--include-deps" ]; then
+              skip_next=true
+              continue
+            fi
+            args+=("")
+          done
+          exec /usr/bin/autoreconf ""' | sudo tee /usr/local/bin/autoreconf_wrapper > /dev/null
+          sudo chmod +x /usr/local/bin/autoreconf_wrapper
+          # Point the build environment PATH to use wrapper first
+          echo '/usr/local/bin/autoreconf_wrapper:' >> 
+          echo 'autoreconf wrapper installed'
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install cython
           pip install buildozer==1.5.0 kivy==2.3.0
-
-      - name: Install Android SDK & NDK (via p4a) and patch autogen.sh
-        run: |
           pip install python-for-android
-          # Patch libffi's autogen.sh to remove --include-deps (not supported by autoconf 2.13)
-          find .buildozer -name autogen.sh 2>/dev/null | head -5
-          for f in $(find .buildozer -name autogen.sh 2>/dev/null); do
-            echo "Patching: $f"
-            sudo sed -i 's/autoreconf --include-deps/autoreconf/g' "$f"
-          done
 
       - name: Build debug APK
         env:
           BUILDZER_SPEC: buildozer.spec
+          PATH: '/usr/local/bin/autoreconf_wrapper:'
         run: |
-          # Patch ALL autogen.sh files found under .buildozer to remove --include-deps
-          # (libffi is downloaded during build, not during p4a install)
-          for f in $(find .buildozer -name autogen.sh 2>/dev/null); do
-            echo "Patching: $f"
-            sudo sed -i 's/autoreconf --include-deps/autoreconf/g' "$f"
-          done
-          # Verify which autoconf
-          which autoconf autoreconf
-          autoconf --version | head -1
-          autoreconf --version | head -1
+          # Verify
+          which autoreconf
+          autoreconf --version 2>&1 | head -1
           # Run build
           buildozer android debug
           ls -la bin/
