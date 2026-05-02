@@ -18,15 +18,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Force replace autoconf with v2.13
+      - name: Patch autogen.sh to remove incompatible --include-deps flag
         run: |
-          # First install system dependencies
+          # Install system dependencies first
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             python3-pip python3-dev ffmpeg libssl-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
-          # Remove old autoconf completely and replace with v2.13
+          # Remove old autoconf and replace with v2.13
           sudo rm -f /usr/bin/autoconf /usr/bin/autoreconf /usr/bin/autoheader /usr/bin/automake /usr/bin/aclocal
           sudo cp /usr/bin/autoconf2.13 /usr/bin/autoconf
           sudo cp /usr/bin/autoreconf2.13 /usr/bin/autoreconf
@@ -39,17 +39,28 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install cython
-          pip install buildozer==1.5.0
-          pip install kivy==2.3.0
+          pip install buildozer==1.5.0 kivy==2.3.0
 
-      - name: Install Android SDK & NDK (via p4a)
+      - name: Install Android SDK & NDK (via p4a) and patch autogen.sh
         run: |
           pip install python-for-android
+          # Patch libffi's autogen.sh to remove --include-deps (not supported by autoconf 2.13)
+          find .buildozer -name autogen.sh 2>/dev/null | head -5
+          for f in $(find .buildozer -name autogen.sh 2>/dev/null); do
+            echo "Patching: $f"
+            sudo sed -i 's/autoreconf --include-deps/autoreconf/g' "$f"
+          done
 
       - name: Build debug APK
         env:
           BUILDZER_SPEC: buildozer.spec
         run: |
+          # Patch ALL autogen.sh files found under .buildozer to remove --include-deps
+          # (libffi is downloaded during build, not during p4a install)
+          for f in $(find .buildozer -name autogen.sh 2>/dev/null); do
+            echo "Patching: $f"
+            sudo sed -i 's/autoreconf --include-deps/autoreconf/g' "$f"
+          done
           # Verify which autoconf
           which autoconf autoreconf
           autoconf --version | head -1
