@@ -18,16 +18,22 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies
+      - name: Force replace autoconf with v2.13
         run: |
+          # First install system dependencies
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            python3-pip python3-dev ffmpeg libssl-dev libffi-dev \
+            python3-pip python3-dev ffmpeg libssl-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
-          # Override /usr/bin with autoconf2.13 symlinks
-          sudo ln -sf /usr/bin/autoconf2.13 /usr/bin/autoconf
-          sudo ln -sf /usr/bin/autoreconf2.13 /usr/bin/autoreconf
+          # Remove old autoconf completely and replace with v2.13
+          sudo rm -f /usr/bin/autoconf /usr/bin/autoreconf /usr/bin/autoheader /usr/bin/automake /usr/bin/aclocal
+          sudo cp /usr/bin/autoconf2.13 /usr/bin/autoconf
+          sudo cp /usr/bin/autoreconf2.13 /usr/bin/autoreconf
+          # Verify
+          which autoconf autoreconf
+          autoconf --version | head -1
+          autoreconf --version | head -1
 
       - name: Install Python dependencies
         run: |
