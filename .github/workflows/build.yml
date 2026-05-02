@@ -27,29 +27,36 @@ jobs:
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
 
-      - name: Patch autoreconf to strip --include-deps
+      - name: Create autoreconf wrapper (NO system file modification)
         run: |
           set -e
-          # Replace system autoreconf with v2.13
-          sudo rm -f /usr/bin/autoconf /usr/bin/autoreconf /usr/bin/autoheader
-          sudo ln -sf /usr/bin/autoconf2.13 /usr/bin/autoconf
-          sudo ln -sf /usr/bin/autoreconf2.13 /usr/bin/autoreconf
-          sudo ln -sf /usr/bin/autoheader2.13 /usr/bin/autoheader
+          # Write wrapper to /usr/local/bin (already in PATH before /usr/bin)
+          # This wrapper strips --include-deps and delegates to autoreconf2.13
+          cat > /tmp/autoreconf_wrapper.sh << 'ENDOFWRAPPER'
+          #!/bin/bash
+          ARGS=()
+          SKIP_NEXT=false
+          for ARG in "$@"; do
+            if [ "" = "true" ]; then
+              SKIP_NEXT=false
+              continue
+            fi
+            case "" in
+              --include-deps|--include-dep) SKIP_NEXT=true ;;
+              *) ARGS+=("") ;;
+            esac
+          done
+          exec /usr/bin/autoreconf2.13 ""
+          ENDOFWRAPPER
 
-          # Use printf to write wrapper script (avoids PowerShell variable expansion)
-          # This wrapper strips --include-deps from all autoreconf calls
-          sudo printf '#!/bin/bash\nargs=()\nskip_next=false\nfor arg in "$@"; do\n  if [ "" = true ]; then\n    skip_next=false\n    continue\n  fi\n  case "" in\n    --include-deps) skip_next=true ;;\n    --include-dep) skip_next=true ;;\n    *) args+=("") ;;\n  esac\ndone\nexec /usr/bin/autoreconf2.13 ""' > /tmp/fix_autoreconf.sh
-          sudo mv /tmp/fix_autoreconf.sh /usr/local/bin/fix_autoreconf
-          sudo chmod +x /usr/local/bin/fix_autoreconf
+          sudo mv /tmp/autoreconf_wrapper.sh /usr/local/bin/autoreconf
+          sudo chmod +x /usr/local/bin/autoreconf
 
-          # OVERWRITE /usr/bin/autoreconf with our patched version
-          sudo cp /usr/local/bin/fix_autoreconf /usr/bin/autoreconf
-
-          # Verify
-          echo "=== autoreconf version ==="
-          autoreconf --version 2>&1 | head -1
+          # Verify wrapper is in PATH and works
           echo "=== which autoreconf ==="
           which autoreconf
+          echo "=== autoreconf version ==="
+          autoreconf --version 2>&1 | head -1
 
       - name: Install Python dependencies
         run: |
@@ -64,7 +71,10 @@ jobs:
           BUILDZER_SPEC: buildozer.spec
         run: |
           set -e
+          # Confirm our wrapper is being used
+          echo "=== Build step: which autoreconf ==="
           which autoreconf
+          echo "=== Build step: autoreconf --version ==="
           autoreconf --version 2>&1 | head -1
           buildozer android debug
           ls -la bin/
