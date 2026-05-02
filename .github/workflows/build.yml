@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies + configure autoreconf wrapper
+      - name: Install system dependencies
         run: |
           set -e
           sudo apt-get update -qq
@@ -27,42 +27,23 @@ jobs:
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
 
-          # Replace system autoconf with v2.13
+      - name: Patch autoreconf to strip --include-deps
+        run: |
+          set -e
+          # Replace system autoreconf with v2.13
           sudo rm -f /usr/bin/autoconf /usr/bin/autoreconf /usr/bin/autoheader
           sudo ln -sf /usr/bin/autoconf2.13 /usr/bin/autoconf
           sudo ln -sf /usr/bin/autoreconf2.13 /usr/bin/autoreconf
           sudo ln -sf /usr/bin/autoheader2.13 /usr/bin/autoheader
 
-          # Create wrapper that intercepts ALL autoreconf calls and strips --include-deps
-          WRAPPER=/usr/local/bin/autoreconf
-          cat > /tmp/autoreconf-wrapper.sh << WRAPPER_SCRIPT
-          #!/bin/bash
-          args=()
-          skip_next=false
-          for arg in "$@"; do
-            if [ "" = true ]; then
-              skip_next=false
-              continue
-            fi
-            case "" in
-              --include-deps)
-                skip_next=true
-                ;;
-              --include-dep)
-                skip_next=true
-                ;;
-              *)
-                args+=("")
-                ;;
-            esac
-          done
-          exec /usr/bin/autoreconf ""
-          WRAPPER_SCRIPT
-          sudo mv /tmp/autoreconf-wrapper.sh 
-          sudo chmod +x 
+          # Use printf to write wrapper script (avoids PowerShell variable expansion)
+          # This wrapper strips --include-deps from all autoreconf calls
+          sudo printf '#!/bin/bash\nargs=()\nskip_next=false\nfor arg in "$@"; do\n  if [ "" = true ]; then\n    skip_next=false\n    continue\n  fi\n  case "" in\n    --include-deps) skip_next=true ;;\n    --include-dep) skip_next=true ;;\n    *) args+=("") ;;\n  esac\ndone\nexec /usr/bin/autoreconf2.13 ""' > /tmp/fix_autoreconf.sh
+          sudo mv /tmp/fix_autoreconf.sh /usr/local/bin/fix_autoreconf
+          sudo chmod +x /usr/local/bin/fix_autoreconf
 
-          # Use update-alternatives to make our wrapper the system default
-          sudo update-alternatives --install /usr/bin/autoreconf autoreconf  100
+          # OVERWRITE /usr/bin/autoreconf with our patched version
+          sudo cp /usr/local/bin/fix_autoreconf /usr/bin/autoreconf
 
           # Verify
           echo "=== autoreconf version ==="
@@ -72,6 +53,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
+          set -e
           pip install --upgrade pip
           pip install cython
           pip install buildozer==1.5.0 kivy==2.3.0
@@ -81,6 +63,7 @@ jobs:
         env:
           BUILDZER_SPEC: buildozer.spec
         run: |
+          set -e
           which autoreconf
           autoreconf --version 2>&1 | head -1
           buildozer android debug
