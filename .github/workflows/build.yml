@@ -25,6 +25,9 @@ jobs:
             python3-pip python3-dev ffmpeg libssl-dev libffi-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
+          # Override /usr/bin with autoconf2.13 symlinks
+          sudo ln -sf /usr/bin/autoconf2.13 /usr/bin/autoconf
+          sudo ln -sf /usr/bin/autoreconf2.13 /usr/bin/autoreconf
 
       - name: Install Python dependencies
         run: |
@@ -40,14 +43,8 @@ jobs:
       - name: Build debug APK
         env:
           BUILDZER_SPEC: buildozer.spec
-          AUTOCONF: /usr/bin/autoconf2.13
-          AUTORECONF: /usr/bin/autoreconf2.13
-          PATH: /usr/bin:/opt/hostedtoolcache/Python/3.11.15/x64/bin:$PATH
         run: |
-          # Also force symlinks directly
-          sudo ln -sf /usr/bin/autoconf2.13 /usr/local/bin/autoconf
-          sudo ln -sf /usr/bin/autoreconf2.13 /usr/local/bin/autoreconf
-          # Verify which autoconf is being called
+          # Verify which autoconf
           which autoconf autoreconf
           autoconf --version | head -1
           autoreconf --version | head -1
