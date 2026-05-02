@@ -21,7 +21,6 @@ jobs:
       - name: Install dependencies + configure autoreconf wrapper
         run: |
           set -e
-          # Install system dependencies
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             python3-pip python3-dev ffmpeg libssl-dev \
@@ -35,9 +34,8 @@ jobs:
           sudo ln -sf /usr/bin/autoheader2.13 /usr/bin/autoheader
 
           # Create wrapper that intercepts ALL autoreconf calls and strips --include-deps
-          # (autogen.sh calls autoreconf with args, and autoreconf itself calls autoconf internally)
           WRAPPER=/usr/local/bin/autoreconf
-          cat > /tmp/autoreconf-wrapper.sh << 'WRAPPER_SCRIPT'
+          cat > /tmp/autoreconf-wrapper.sh << WRAPPER_SCRIPT
           #!/bin/bash
           args=()
           skip_next=false
