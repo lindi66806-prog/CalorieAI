@@ -27,36 +27,17 @@ jobs:
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
             cmake swig git autoconf2.13 automake libtool m4
 
-      - name: Create autoreconf wrapper (NO system file modification)
+      - name: Create autoreconf wrapper via base64
         run: |
           set -e
-          # Write wrapper to /usr/local/bin (already in PATH before /usr/bin)
-          # This wrapper strips --include-deps and delegates to autoreconf2.13
-          cat > /tmp/autoreconf_wrapper.sh << 'ENDOFWRAPPER'
-          #!/bin/bash
-          ARGS=()
-          SKIP_NEXT=false
-          for ARG in "$@"; do
-            if [ "" = "true" ]; then
-              SKIP_NEXT=false
-              continue
-            fi
-            case "" in
-              --include-deps|--include-dep) SKIP_NEXT=true ;;
-              *) ARGS+=("") ;;
-            esac
-          done
-          exec /usr/bin/autoreconf2.13 ""
-          ENDOFWRAPPER
-
-          sudo mv /tmp/autoreconf_wrapper.sh /usr/local/bin/autoreconf
+          echo 'IyEvYmluL2Jhc2gKQVJHUz0oKQpTS0lQX05FWFQ9ZmFsc2UKZm9yIEFSRyBpbiAiJEAiOyBkbwogIGlmIFsgIiRTS0lQX05FWFQiID0gInRydWUiIF07IHRoZW4KICAgIFNLSVBfTkVYVD1mYWxzZQogICAgY29udGludWUKICBmaQogIGNhc2UgIiRBUkciIGluCiAgICAtLWluY2x1ZGUtZGVwc3wtLWluY2x1ZGUtZGVwKSBTS0lQX05FWFQ9dHJ1ZSA7OwogICAgKikgQVJHUys9KCIkQVJHIikgOzsKICBlc2FjCmRvbmUKZXhlYyAvdXNyL2Jpbi9hdXRvcmVjb25mMi4xMyAiJHtBUkdTW0BdfSIK' | base64 -d | sudo tee /usr/local/bin/autoreconf > /dev/null
           sudo chmod +x /usr/local/bin/autoreconf
-
-          # Verify wrapper is in PATH and works
           echo "=== which autoreconf ==="
           which autoreconf
-          echo "=== autoreconf version ==="
+          echo "=== autoreconf --version ==="
           autoreconf --version 2>&1 | head -1
+          echo "=== test: autoreconf -f 2>&1 | head -3 ==="
+          autoreconf -f 2>&1 | head -3
 
       - name: Install Python dependencies
         run: |
@@ -71,10 +52,9 @@ jobs:
           BUILDZER_SPEC: buildozer.spec
         run: |
           set -e
-          # Confirm our wrapper is being used
-          echo "=== Build step: which autoreconf ==="
+          echo "=== Build: which autoreconf ==="
           which autoreconf
-          echo "=== Build step: autoreconf --version ==="
+          echo "=== Build: autoreconf --version ==="
           autoreconf --version 2>&1 | head -1
           buildozer android debug
           ls -la bin/
