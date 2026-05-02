@@ -1,0 +1,331 @@
+#:import MDCard kivymd.uix.card.MDCard
+#:import MDBoxLayout kivymd.uix.boxlayout.MDBoxLayout
+
+<MainScreen>:
+    name: "main"
+    MDBoxLayout:
+        orientation: "vertical"
+
+        # 顶部标题栏
+        MDTopAppBar:
+            title: "🔥 CalorieAI 身材管理"
+            elevation: 4
+            pos_hint: {"top": 1}
+            right_action_items: [["history", lambda x: app.switch_screen("history")], ["account", lambda x: app.switch_screen("profile")]]
+
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "8dp"
+            size_hint_y: 1
+
+            ScrollView:
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: "8dp"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    adaptive_height: True
+
+                    # 今日数据卡片
+                    MDCard:
+                        orientation: "vertical"
+                        padding: "16dp"
+                        spacing: "6dp"
+                        size_hint_y: None
+                        height: "120dp"
+                        elevation: 2
+                        radius: [12, 12, 12, 12]
+
+                        MDLabel:
+                            id: intake_label
+                            text: "🔥 摄入: 0 kcal"
+                            font_style: "H6"
+                            theme_text_color: "Primary"
+                        MDLabel:
+                            id: consume_label
+                            text: "🏃 消耗: 0 kcal"
+                            font_style: "H6"
+                            theme_text_color: "Primary"
+                        MDLabel:
+                            id: gap_label
+                            text: "📊 缺口: 0 kcal"
+                            font_style: "H6"
+                            theme_text_color: "Secondary"
+
+                    # 拍照识别区
+                    MDCard:
+                        orientation: "vertical"
+                        padding: "12dp"
+                        spacing: "6dp"
+                        size_hint_y: None
+                        height: "100dp"
+                        elevation: 1
+                        radius: [12, 12, 12, 12]
+
+                        MDLabel:
+                            text: "📷 拍照识别食物"
+                            font_style: "Subtitle1"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            size_hint_y: None
+                            height: "40dp"
+
+                            MDRaisedButton:
+                                text: "早餐"
+                                on_press: root.capture("早餐")
+                                md_bg_color: app.theme_cls.primary_color
+                            MDRaisedButton:
+                                text: "午餐"
+                                on_press: root.capture("午餐")
+                                md_bg_color: app.theme_cls.primary_color
+                            MDRaisedButton:
+                                text: "晚餐"
+                                on_press: root.capture("晚餐")
+                                md_bg_color: app.theme_cls.primary_color
+                            MDRaisedButton:
+                                text: "零食"
+                                on_press: root.capture("零食")
+                                md_bg_color: app.theme_cls.accent_color
+
+                    # 手动添加食物
+                    MDCard:
+                        orientation: "vertical"
+                        padding: "12dp"
+                        spacing: "6dp"
+                        size_hint_y: None
+                        height: "220dp"
+                        elevation: 1
+                        radius: [12, 12, 12, 12]
+
+                        MDLabel:
+                            text: "✏️ 手动添加食物"
+                            font_style: "Subtitle1"
+                        MDTextField:
+                            id: food_name
+                            hint_text: "食物名称"
+                            mode: "rectangle"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            MDTextField:
+                                id: food_kcal
+                                hint_text: "热量(kcal)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                            MDTextField:
+                                id: food_protein
+                                hint_text: "蛋白质(g)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                            MDTextField:
+                                id: food_fat
+                                hint_text: "脂肪(g)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                        MDTextField:
+                            id: meal_type
+                            hint_text: "餐次(早餐/午餐/晚餐/零食)"
+                            mode: "rectangle"
+                        MDRaisedButton:
+                            text: "添加食物"
+                            on_press: root.manual_add_food()
+                            pos_hint: {"center_x": 0.5}
+
+                    # 运动记录区
+                    MDCard:
+                        orientation: "vertical"
+                        padding: "12dp"
+                        spacing: "6dp"
+                        size_hint_y: None
+                        height: "180dp"
+                        elevation: 1
+                        radius: [12, 12, 12, 12]
+
+                        MDLabel:
+                            text: "🏃 运动记录"
+                            font_style: "Subtitle1"
+                        MDTextField:
+                            id: steps_input
+                            hint_text: "今日步数"
+                            mode: "rectangle"
+                            input_filter: "int"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            MDTextField:
+                                id: sport_input
+                                hint_text: "运动类型(跑步/游泳/...)"
+                                mode: "rectangle"
+                            MDTextField:
+                                id: minutes_input
+                                hint_text: "运动时长(分钟)"
+                                mode: "rectangle"
+                                input_filter: "int"
+                        MDRaisedButton:
+                            text: "计算运动消耗"
+                            on_press: root.calc_activity()
+                            pos_hint: {"center_x": 0.5}
+
+                    # 身体维度记录
+                    MDCard:
+                        orientation: "vertical"
+                        padding: "12dp"
+                        spacing: "6dp"
+                        size_hint_y: None
+                        height: "310dp"
+                        elevation: 1
+                        radius: [12, 12, 12, 12]
+
+                        MDLabel:
+                            text: "📏 身体维度记录"
+                            font_style: "Subtitle1"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            size_hint_y: None
+                            height: "48dp"
+                            MDTextField:
+                                id: body_weight
+                                hint_text: "体重(kg)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                            MDTextField:
+                                id: body_neck
+                                hint_text: "颈围(cm)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            size_hint_y: None
+                            height: "48dp"
+                            MDTextField:
+                                id: body_chest
+                                hint_text: "胸围(cm)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                            MDTextField:
+                                id: body_waist
+                                hint_text: "腰围(cm)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            size_hint_y: None
+                            height: "48dp"
+                            MDTextField:
+                                id: body_hip
+                                hint_text: "臀围(cm)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                            MDTextField:
+                                id: body_arm
+                                hint_text: "上臂围(cm)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                        MDBoxLayout:
+                            spacing: "8dp"
+                            size_hint_y: None
+                            height: "48dp"
+                            MDTextField:
+                                id: body_thigh
+                                hint_text: "大腿围(cm)"
+                                mode: "rectangle"
+                                input_filter: "float"
+                            Widget:
+                        MDRaisedButton:
+                            text: "保存身体数据"
+                            on_press: root.save_body()
+                            pos_hint: {"center_x": 0.5}
+
+                    # 今日食物列表
+                    MDCard:
+                        orientation: "vertical"
+                        padding: "12dp"
+                        spacing: "4dp"
+                        size_hint_y: None
+                        height: "150dp"
+                        elevation: 1
+                        radius: [12, 12, 12, 12]
+
+                        MDLabel:
+                            text: "📋 今日饮食记录"
+                            font_style: "Subtitle1"
+                        ScrollView:
+                            MDBoxLayout:
+                                id: food_list
+                                orientation: "vertical"
+                                size_hint_y: None
+                                height: self.minimum_height
+
+
+<HistoryScreen>:
+    name: "history"
+    MDBoxLayout:
+        orientation: "vertical"
+
+        MDTopAppBar:
+            title: "📊 历史记录"
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: app.switch_screen("main")]]
+
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: "12dp"
+
+            ScrollView:
+                MDBoxLayout:
+                    id: history_list
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: "4dp"
+
+
+<ProfileScreen>:
+    name: "profile"
+    MDBoxLayout:
+        orientation: "vertical"
+
+        MDTopAppBar:
+            title: "👤 个人资料"
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: app.switch_screen("main")]]
+
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "8dp"
+
+            MDCard:
+                orientation: "vertical"
+                padding: "16dp"
+                spacing: "8dp"
+                size_hint_y: None
+                height: "280dp"
+                elevation: 2
+                radius: [12, 12, 12, 12]
+
+                MDLabel:
+                    text: "基本信息（用于计算BMR基础代谢）"
+                    font_style: "Subtitle1"
+                MDTextField:
+                    id: gender_input
+                    hint_text: "性别(男/女)"
+                    mode: "rectangle"
+                MDTextField:
+                    id: age_input
+                    hint_text: "年龄"
+                    mode: "rectangle"
+                    input_filter: "int"
+                MDTextField:
+                    id: height_input
+                    hint_text: "身高(cm)"
+                    mode: "rectangle"
+                    input_filter: "float"
+                MDTextField:
+                    id: weight_input
+                    hint_text: "体重(kg)"
+                    mode: "rectangle"
+                    input_filter: "float"
+                MDRaisedButton:
+                    text: "保存个人资料"
+                    on_press: root.save_profile()
+                    pos_hint: {"center_x": 0.5}

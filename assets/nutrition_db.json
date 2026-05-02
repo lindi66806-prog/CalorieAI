@@ -1,0 +1,43 @@
+{
+    "default": {"kcal": 150, "protein": 6, "fat": 5},
+    "混合食物": {"kcal": 180, "protein": 8, "fat": 6},
+
+    "米饭": {"kcal": 116, "protein": 2.6, "fat": 0.3},
+    "面条": {"kcal": 137, "protein": 4.5, "fat": 0.6},
+    "馒头": {"kcal": 221, "protein": 7.0, "fat": 1.1},
+    "包子": {"kcal": 227, "protein": 7.2, "fat": 5.8},
+    "饺子": {"kcal": 240, "protein": 8.5, "fat": 7.0},
+    "粥": {"kcal": 46, "protein": 1.1, "fat": 0.3},
+    "炒菜": {"kcal": 165, "protein": 6.0, "fat": 10.0},
+    "火锅": {"kcal": 220, "protein": 12.0, "fat": 14.0},
+    "烧烤": {"kcal": 250, "protein": 15.0, "fat": 18.0},
+    "沙拉": {"kcal": 85, "protein": 3.0, "fat": 4.5},
+    "三明治": {"kcal": 265, "protein": 10.0, "fat": 12.0},
+    "汉堡": {"kcal": 356, "protein": 17.0, "fat": 18.0},
+    "披萨": {"kcal": 266, "protein": 11.0, "fat": 10.0},
+    "寿司": {"kcal": 145, "protein": 5.8, "fat": 3.0},
+    "汤": {"kcal": 55, "protein": 3.0, "fat": 2.0},
+
+    "鸡蛋": {"kcal": 144, "protein": 13.3, "fat": 8.8},
+    "牛奶": {"kcal": 54, "protein": 3.0, "fat": 3.2},
+    "酸奶": {"kcal": 72, "protein": 2.5, "fat": 2.7},
+    "面包": {"kcal": 312, "protein": 8.3, "fat": 5.1},
+    "蛋糕": {"kcal": 348, "protein": 7.0, "fat": 15.0},
+
+    "水果": {"kcal": 50, "protein": 0.5, "fat": 0.2},
+    "蔬菜": {"kcal": 25, "protein": 1.5, "fat": 0.2},
+    "鸡肉": {"kcal": 167, "protein": 19.3, "fat": 9.4},
+    "牛肉": {"kcal": 125, "protein": 19.9, "fat": 4.2},
+    "猪肉": {"kcal": 143, "protein": 20.3, "fat": 6.2},
+    "鱼肉": {"kcal": 104, "protein": 17.6, "fat": 3.5},
+    "虾": {"kcal": 87, "protein": 18.6, "fat": 0.8},
+    "豆腐": {"kcal": 81, "protein": 8.1, "fat": 3.7},
+    "坚果": {"kcal": 607, "protein": 20.0, "fat": 53.0},
+    "薯条": {"kcal": 312, "protein": 3.4, "fat": 15.0},
+
+    "可乐": {"kcal": 43, "protein": 0, "fat": 0},
+    "奶茶": {"kcal": 120, "protein": 1.5, "fat": 3.0},
+    "咖啡": {"kcal": 5, "protein": 0.3, "fat": 0},
+    "果汁": {"kcal": 45, "protein": 0.3, "fat": 0.1},
+    "啤酒": {"kcal": 32, "protein": 0.4, "fat": 0}
+}
