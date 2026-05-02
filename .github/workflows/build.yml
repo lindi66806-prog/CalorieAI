@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install -y -qq \
             python3-pip python3-dev ffmpeg libssl-dev libffi-dev \
             libxml2-dev libxslt1-dev zlib1g-dev openjdk-17-jdk-headless \
-            cmake swig git autoconf2.13 automake libtool
+            cmake swig git autoconf2.13 automake libtool m4
 
       - name: Install Python dependencies
         run: |
@@ -41,6 +41,9 @@ jobs:
         env:
           BUILDZER_SPEC: buildozer.spec
         run: |
+          # Give autoconf2.13 priority over system autoconf
+          sudo update-alternatives --install /usr/bin/autoconf autoconf /usr/bin/autoconf2.13 100
+          sudo update-alternatives --install /usr/bin/autoreconf autoreconf /usr/bin/autoreconf2.13 100
           buildozer android debug
           ls -la bin/
 
